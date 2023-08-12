@@ -17,9 +17,13 @@ if not args[2] then
   os.exit()
 end
 
+print(client.voice)
+
+print(args[2])
+
 local function getStream(url)
 
-  local child = spawn('youtube-dl', {
+  local child = spawn('yt-dlp', {
     args = {'-g', url},
     stdio = {nil, true, true}
   })
@@ -50,7 +54,7 @@ local function getStream(url)
 end
 
 local function getPlaylistStream(url, number)
-  local child = spawn('youtube-dl', {
+  local child = spawn('yt-dlp', {
     args = {'-g', '--playlist-items', number, url},
     stdio = {nil, true, true}
   })
@@ -89,28 +93,29 @@ local function len(tbl)
 end
 
 local streamPlaylist = coroutine.wrap(function(url, beginWith)
-  local child = spawn('youtube-dl', {
+  local child = spawn('yt-dlp', {
     args = {'-J', url},
   })
   stdio = {nil, true, true}
   local playlist = json.decode(child.stdout:read())
   connection = channel:join()
   if connection then
-    p('Connected')
+    print('Connected')
     for playingTrack = beginWith or 1, len(playlist.entries) do
       local stream = getPlaylistStream(url, playingTrack)
       print('Playing track '..playingTrack..' of '..len(playlist.entries))
-      connection:playFile(stream)
+      connection:playFFmpeg(stream)
     end
   end
 end)
 
-client.voice:loadOpus('libopus-x86')
-client.voice:loadSodium('libsodium-x86')
+--client.voice:loadOpus('libopus-x86')
+--client.voice:loadSodium('libsodium-x86')
 
 client:on('ready', function()
-  p('Logged in as ' .. client.user.username)
-  channel = client:getVoiceChannel('') -- channel ID goes here
+  print('Logged in as ' .. client.user.username)
+  channel = client:getChannel('980533602590793778') -- channel ID goes here
+
 end)
 
 client:on('messageCreate', function(message)
@@ -124,20 +129,26 @@ client:on('messageCreate', function(message)
         playingURL = string.gsub(msg.content, 'audio%.play ', '')
         local stream = getStream(playingURL) -- URL goes here
         print('playing')
-        connection:playFile(stream)
+        connection:playFFmpeg(stream)
       end
     elseif string.find(msg.content, 'audio%.playlist ') then
       playingURL = string.gsub(msg.content, 'audio%.playlist ', '')
       streamPlaylist(playingURL, 2)
     elseif msg.content == 'audio.pause' then
-      connection:pauseStream(playingURL)
+      if connection then
+        connection:pauseStream(playingURL)
+      end
     elseif msg.content == 'audio.resume' then
-      connection:resumeStream()
+      if connection then
+        connection:resumeStream()
+      end
     elseif msg.content == 'audio.skip' then
       print('stopping')
-      connection:stopStream()
+      if connection then
+        connection:stopStream()
+      end
     end
   end
 end)
 
-client:run(args[2])
+client:run("Bot "..args[2])
