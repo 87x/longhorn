@@ -1,4 +1,4 @@
-# musicord
+# longhorn, fork of musicord
 A simple music-bot to stream from YouTube written in Lua with the [Discordia](https://github.com/SinisterRectus/Discordia) and the [youtube-dl](https://rg3.github.io/youtube-dl/) library
 
 ## Installation
