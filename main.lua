@@ -24,7 +24,7 @@ print(args[2])
 local function getStream(url)
 
   local child = spawn('yt-dlp', {
-    args = {'-g', url},
+    args = {"-g",url},
     stdio = {nil, true, true}
   })
 
@@ -33,7 +33,8 @@ local function getStream(url)
     local stdout = child.stdout
     for chunk in stdout.read do
       local mime = parse(chunk, true).query.mime
-      if mime and mime:find('audio') then
+      print(mime)
+      if mime and (mime[1] and mime[1]:find('audio')) or (mime[2] and mime[2]:find('audio')) then
         stream = chunk
       end
     end
