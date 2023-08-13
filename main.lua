@@ -10,8 +10,7 @@ local connection
 local msg = ''
 local channel
 local guild
-local playingURL = ''
-local playingTrack = 0
+local playingURL = {}
 
 connections={}
 
@@ -81,43 +80,6 @@ local function getStream(url)
   return stream and stream:gsub('%c', ''),streams
 end
 
---[[local function getPlaylistStream(url, number)
-  local child = spawn('yt-dlp', {
-    args = {'--print urls', '--playlist-items', number, url},
-    stdio = {nil, true, true}
-  })
-
-  local stream
-  local function readstdout()
-    local stdout = child.stdout
-    for chunk in stdout.read do
-      local mime = parse(chunk, true).query.mime
-      print("mime",mime)
-      if mime then
-        for i,v in pairs(mime) do
-          print("mime DATA",v)
-          if v:find('audio') then
-            stream=chunk
-          end
-        end
-      end
-    end
-    return pcall(stdout.handle.close, stdout.handle)
-  end
-
-  local function readstderr()
-    local stderr = child.stderr
-    for chunk in stderr.read do
-      print(chunk)
-    end
-    return pcall(stderr.handle.close, stderr.handle)
-  end
-
-  split(readstdout, readstderr, child.waitExit)
-
-  return stream and stream:gsub('%c', '')
-end]] -- deprecated
-
 local function len(tbl)
   local count = 0
   for k,v in pairs(tbl) do
@@ -125,26 +87,6 @@ local function len(tbl)
   end
   return count
 end
-
---[[local streamPlaylist = coroutine.wrap(function(url, beginWith)
-  local child = spawn('yt-dlp', {
-    args = {'-J', url},
-  })
-  stdio = {nil, true, true}
-  local playlist = json.decode(child.stdout:read())
-  connection = channel:join()
-  if connection then
-    print('Connected')
-    for playingTrack = beginWith or 1, len(playlist.entries) do
-      local stream = getPlaylistStream(url, playingTrack)
-      print('Playing track '..playingTrack..' of '..len(playlist.entries))
-      connection:playFFmpeg(stream)
-    end
-  end
-end)]] -- deprecated
-
---client.voice:loadOpus('libopus-x86')
---client.voice:loadSodium('libsodium-x86')
 
 client:on('ready', function()
   print('Logged in as ' .. client.user.username)
@@ -168,16 +110,16 @@ client:on('messageCreate', function(message)
       print(guild,"connection",connection)
       if connections[guild] then
         print(guild,'success!')
-        playingURL = string.gsub(msg.content, 'audio%.play ', '')
-        local stream,streams = getStream(playingURL) -- URL goes here
+        playingURL[guild] = string.gsub(msg.content, 'audio%.play ', '')
+        local stream,streams = getStream(playingURL[guild]) -- URL goes here
         if stream then
           print(guild,"stream",stream)
           print(guild,'playing!')
-          if stream and stream~="multiple" then -- todo: make not shit
+          if stream and stream~="multiple" then -- todo: make not HACK
             connections[guild]:playFFmpeg(stream)
           elseif streams and stream=="multiple" then
             for i,stream in ipairs(streams) do
-              if true then
+              if true then -- todo: make this a queue system instead
                 connections[guild]:playFFmpeg(stream)
               end
             end
@@ -188,13 +130,10 @@ client:on('messageCreate', function(message)
           print(guild,"no stream!")
         end
       end
-    --[[elseif string.find(msg.content, 'audio%.playlist ') then
-      playingURL = string.gsub(msg.content, 'audio%.playlist ', '')
-      streamPlaylist(playingURL, 2)]] -- deprecated
     elseif msg.content == 'audio.pause' then
       guild = message.guild
       if connections[guild] then
-        connections[guild]:pauseStream(playingURL)
+        connections[guild]:pauseStream(playingURL[guild])
       end
     elseif msg.content == 'audio.resume' then
       guild = message.guild
