@@ -6,7 +6,6 @@ First, follow the instructions [here](https://github.com/SinisterRectus/Discordi
 
 ## Available commands:
 - ``audio.play URL``      for playing single videos
-- ``audio.playlist URL``  for playing YouTube-playlists
 - ``audio.pause``         to pause the current stream
 - ``audio.resume``        to resume the paused stream
 - ``audio.skip``          to skip the playing video and go on with the next item on the YouTube playlist
