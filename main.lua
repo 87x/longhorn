@@ -123,12 +123,20 @@ client:on('messageCreate', function(message)
   if message.author.id ~= client.user.id then --If not himself
     msg = message
     if string.find(msg.content, 'audio%.play ') then
-      connection = channel:join()
+      if message.member then
+        channel = message.member.voiceChannel
+      end
+      if channel then
+        connection = channel:join() -- chances are this is bugged?
+      end
+      print("channel",channel)
+      print("connection",connection)
       if connection then
-        print('connected')
+        print('success!')
         playingURL = string.gsub(msg.content, 'audio%.play ', '')
         local stream = getStream(playingURL) -- URL goes here
-        print('playing')
+        print("stream",stream)
+        print('playing!')
         connection:playFFmpeg(stream)
       end
     elseif string.find(msg.content, 'audio%.playlist ') then
